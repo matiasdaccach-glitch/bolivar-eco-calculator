@@ -1,30 +1,3 @@
-"use strict";
-
-const form = document.getElementById("eco-form");
-const languageSelect = document.getElementById("language");
-const results = document.getElementById("results");
-const formError = document.getElementById("form-error");
-
-const transportCO2 = {
-  bus: 2.0,
-  "private-car": 8.0,
-  "shared-car": 4.0,
-  "bike-walk": 0
-};
-
-const recyclingPoints = {
-  low: 5,
-  medium: 15,
-  high: 25
-};
-
-const transportPoints = {
-  bus: 15,
-  "private-car": 0,
-  "shared-car": 10,
-  "bike-walk": 25
-};
-
 const translations = {
   es: {
     languageLabel: "Idioma",
@@ -46,31 +19,34 @@ const translations = {
     low: "Bajo",
     medium: "Medio",
     high: "Alto",
-    calculate: "Calcular mi impacto",
-    error: "Completa todos los campos con valores válidos.",
+    calculateButton: "Calcular mi impacto",
     resultsEyebrow: "TU RESUMEN",
     resultsTitle: "Tu estimación semanal",
     co2Label: "Huella de carbono estimada",
     co2Note: "de CO₂ por semana",
     pointsLabel: "Puntaje ecológico",
-    print: "Imprimir / Guardar PDF",
-    reset: "Hacer otro cálculo",
+    pointsNote: "Eco-Points",
+    printButton: "Imprimir / Guardar PDF",
+    resetButton: "Hacer otro cálculo",
     disclaimer: "Estimación educativa basada en los datos ingresados; no representa una medición oficial.",
     footer: "Pequeños hábitos, grandes cambios.",
-    explanation: "Estimación para cinco días escolares. El cálculo usa factores educativos de transporte y papel."
+    error: "Completa todos los campos con valores válidos.",
+    explanationLow: "Tu resultado muestra oportunidades para reducir tu impacto. Considera compartir el transporte, caminar cuando sea posible y reciclar más.",
+    explanationMid: "Vas por buen camino. Unos pequeños cambios en transporte, uso de papel y reciclaje pueden reducir aún más tu impacto.",
+    explanationHigh: "¡Buen trabajo! Tus hábitos ayudan a reducir tu impacto. Sigue manteniendo estas decisiones sostenibles."
   },
   en: {
     languageLabel: "Language",
-    eyebrow: "COLEGIO BOLÍVAR · ECO CHALLENGE",
+    eyebrow: "COLEGIO BOLÍVAR · ENVIRONMENTAL CHALLENGE",
     pageTitle: "Your impact matters.",
-    introText: "Estimate your environmental footprint for a school week.",
+    introText: "Estimate your environmental footprint during a school week.",
     formTitle: "Your weekly habits",
-    formDescription: "Enter your information to get an estimate.",
-    transportLabel: "How do you travel to school?",
+    formDescription: "Complete the fields to get your estimate.",
+    transportLabel: "How do you get to school?",
     transportPlaceholder: "Select your transportation",
     bus: "Bus",
     privateCar: "Private car",
-    sharedCar: "Carpool",
+    sharedCar: "Shared car",
     bikeWalk: "Bicycle / Walking",
     paperLabel: "Sheets of paper used per day",
     paperPlaceholder: "Example: 5",
@@ -79,129 +55,180 @@ const translations = {
     low: "Low",
     medium: "Medium",
     high: "High",
-    calculate: "Calculate my impact",
-    error: "Complete every field with valid values.",
+    calculateButton: "Calculate my impact",
     resultsEyebrow: "YOUR SUMMARY",
     resultsTitle: "Your weekly estimate",
     co2Label: "Estimated carbon footprint",
-    co2Note: "kg of CO₂ per week",
+    co2Note: "of CO₂ per week",
     pointsLabel: "Eco score",
-    print: "Print / Save PDF",
-    reset: "Calculate again",
+    pointsNote: "Eco-Points",
+    printButton: "Print / Save as PDF",
+    resetButton: "Start another calculation",
     disclaimer: "Educational estimate based on the information entered; it is not an official measurement.",
     footer: "Small habits, big changes.",
-    explanation: "Estimate for five school days. The calculation uses educational transportation and paper factors."
+    error: "Complete all fields with valid values.",
+    explanationLow: "Your result shows opportunities to reduce your impact. Consider sharing transportation, walking when possible, and recycling more.",
+    explanationMid: "You are on the right track. Small changes in transportation, paper use, and recycling can reduce your impact further.",
+    explanationHigh: "Great work! Your habits help reduce your impact. Keep making these sustainable choices."
   }
 };
 
+const form = document.getElementById("eco-form");
+const results = document.getElementById("results");
+const errorMessage = document.getElementById("form-error");
+const languageSelect = document.getElementById("language");
+const printButton = document.getElementById("print-button");
+const resetButton = document.getElementById("reset-button");
+
+let currentLanguage = "es";
+
 function setText(id, value) {
   const element = document.getElementById(id);
-  if (element) {
-    element.textContent = value;
-  }
+  if (element) element.textContent = value;
 }
 
-function updateLanguage(language) {
-  const text = translations[language] || translations.es;
+function setLanguage(language) {
+  currentLanguage = language;
+  const t = translations[language];
 
   document.documentElement.lang = language;
+  document.title = language === "es"
+    ? "Bolívar Eco-Calculator"
+    : "Bolívar Eco-Calculator";
 
-  setText("language-label", text.languageLabel);
-  setText("eyebrow", text.eyebrow);
-  setText("page-title", text.pageTitle);
-  setText("intro-text", text.introText);
-  setText("form-title", text.formTitle);
-  setText("form-description", text.formDescription);
-  setText("transport-label", text.transportLabel);
-  setText("transport-placeholder", text.transportPlaceholder);
-  setText("option-bus", text.bus);
-  setText("option-private", text.privateCar);
-  setText("option-shared", text.sharedCar);
-  setText("option-bike", text.bikeWalk);
-  setText("paper-label", text.paperLabel);
-  setText("paper", "");
-  document.getElementById("paper").placeholder = text.paperPlaceholder;
-  setText("recycling-label", text.recyclingLabel);
-  setText("recycling-placeholder", text.recyclingPlaceholder);
-  setText("option-low", text.low);
-  setText("option-medium", text.medium);
-  setText("option-high", text.high);
-  setText("calculate-button", text.calculate);
-  setText("results-eyebrow", text.resultsEyebrow);
-  setText("results-title", text.resultsTitle);
-  setText("co2-label", text.co2Label);
-  setText("co2-note", text.co2Note);
-  setText("points-label", text.pointsLabel);
-  setText("print-button-text", text.print);
-  setText("reset-button-text", text.reset);
-  setText("disclaimer", text.disclaimer);
-  setText("footer-text", text.footer);
+  setText("language-label", t.languageLabel);
+  setText("eyebrow", t.eyebrow);
+  setText("page-title", t.pageTitle);
+  setText("intro-text", t.introText);
+  setText("form-title", t.formTitle);
+  setText("form-description", t.formDescription);
+  setText("transport-label", t.transportLabel);
+  setText("transport-placeholder", t.transportPlaceholder);
+  setText("option-bus", t.bus);
+  setText("option-private", t.privateCar);
+  setText("option-shared", t.sharedCar);
+  setText("option-bike", t.bikeWalk);
+  setText("paper-label", t.paperLabel);
+  document.getElementById("paper").placeholder = t.paperPlaceholder;
+  setText("recycling-label", t.recyclingLabel);
+  setText("recycling-placeholder", t.recyclingPlaceholder);
+  setText("option-low", t.low);
+  setText("option-medium", t.medium);
+  setText("option-high", t.high);
+  setText("calculate-button", t.calculateButton + " →");
+  setText("results-eyebrow", t.resultsEyebrow);
+  setText("results-title", t.resultsTitle);
+  setText("co2-label", t.co2Label);
+  setText("co2-note", t.co2Note);
+  setText("points-label", t.pointsLabel);
+  setText("points-note", t.pointsNote);
+  setText("print-button-text", t.printButton);
+  setText("reset-button-text", t.resetButton);
+  setText("disclaimer", t.disclaimer);
+  setText("footer-text", t.footer);
 
-  if (!formError.hidden) {
-    formError.textContent = text.error;
+  if (!errorMessage.hidden) {
+    errorMessage.textContent = t.error;
   }
 
-  if (!results.hidden) {
-    setText("result-explanation", text.explanation);
+  updateExplanation();
+}
+
+function calculateImpact(transport, paperPerDay, recycling) {
+  const transportFactors = {
+    bus: 1.2,
+    "private-car": 4.8,
+    "shared-car": 2.2,
+    "bike-walk": 0
+  };
+
+  const recyclingPoints = {
+    low: 10,
+    medium: 25,
+    high: 40
+  };
+
+  const weeklyTransportKg = transportFactors[transport] * 5;
+  const weeklyPaperKg = paperPerDay * 5 * 0.005;
+  const co2 = weeklyTransportKg + weeklyPaperKg;
+
+  let points = 100 - Math.round(co2 * 4);
+  points += recyclingPoints[recycling];
+  points = Math.max(0, Math.min(100, points));
+
+  return {
+    co2: co2.toFixed(2),
+    points
+  };
+}
+
+function updateExplanation() {
+  if (!results || results.hidden) return;
+
+  const points = Number(document.getElementById("points-value").textContent);
+  const t = translations[currentLanguage];
+
+  let message;
+  if (points >= 75) {
+    message = t.explanationHigh;
+  } else if (points >= 45) {
+    message = t.explanationMid;
+  } else {
+    message = t.explanationLow;
   }
+
+  setText("result-explanation", message);
 }
 
 form.addEventListener("submit", (event) => {
   event.preventDefault();
+  errorMessage.hidden = true;
 
-  const language = languageSelect.value;
-  const text = translations[language] || translations.es;
   const transport = document.getElementById("transport").value;
-  const paperInput = document.getElementById("paper").value;
+  const paperInput = document.getElementById("paper");
+  const paperPerDay = Number(paperInput.value);
   const recycling = document.getElementById("recycling").value;
-  const paperPerDay = Number(paperInput);
 
   if (
     !transport ||
     !recycling ||
-    paperInput === "" ||
+    paperInput.value.trim() === "" ||
     !Number.isFinite(paperPerDay) ||
     paperPerDay < 0
   ) {
-    formError.textContent = text.error;
-    formError.hidden = false;
+    errorMessage.textContent = translations[currentLanguage].error;
+    errorMessage.hidden = false;
     return;
   }
 
-  formError.hidden = true;
+  const result = calculateImpact(transport, paperPerDay, recycling);
 
-  // Mantiene la estimación del ejemplo: cinco días escolares.
-  const weeklyTransportCO2 = transportCO2[transport] * 5;
-  const weeklyPaperCO2 = paperPerDay * 5 * 0.005;
-  const weeklyCO2 = weeklyTransportCO2 + weeklyPaperCO2;
+  setText("co2-value", result.co2);
+  setText("points-value", String(result.points));
 
-  // Mantiene el puntaje del ejemplo anterior.
-  const paperPoints = Math.max(0, 20 - paperPerDay);
-  const ecoPoints =
-    transportPoints[transport] +
-    recyclingPoints[recycling] +
-    paperPoints;
-
-  document.getElementById("co2-value").textContent = weeklyCO2.toFixed(2);
-  document.getElementById("points-value").textContent = String(ecoPoints);
-  setText("result-explanation", text.explanation);
   results.hidden = false;
-  results.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  updateExplanation();
+  results.scrollIntoView({ behavior: "smooth", block: "start" });
 });
 
 languageSelect.addEventListener("change", () => {
-  updateLanguage(languageSelect.value);
+  setLanguage(languageSelect.value);
 });
 
-document.getElementById("print-button").addEventListener("click", () => {
+printButton.addEventListener("click", () => {
+  if (results.hidden) return;
   window.print();
 });
 
-document.getElementById("reset-button").addEventListener("click", () => {
+resetButton.addEventListener("click", () => {
   form.reset();
   results.hidden = true;
-  formError.hidden = true;
+  errorMessage.hidden = true;
+  setText("co2-value", "0.00");
+  setText("points-value", "0");
+  setText("result-explanation", "");
   document.getElementById("transport").focus();
+  window.scrollTo({ top: 0, behavior: "smooth" });
 });
 
-updateLanguage(languageSelect.value);
+setLanguage("es");
